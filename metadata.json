@@ -1,0 +1,6 @@
+{
+  "name": "PontoPlus — Gestão de Pontos, Milhas e Passagens",
+  "description": "Centralize programas de fidelidade, acompanhe pontos a expirar, compare passagens em milhas ou dinheiro, simule transferências bonificadas e negocie milhas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

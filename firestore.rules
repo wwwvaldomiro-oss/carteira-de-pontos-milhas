@@ -1,0 +1,265 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isVerifiedOwner(userId) {
+      return isOwner(userId) && request.auth.token.email_verified == true;
+    }
+
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll(['uid', 'displayName', 'email', 'defaultValuationCpm', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'displayName', 'email', 'defaultValuationCpm', 'createdAt', 'updatedAt'])
+        && data.uid is string && data.uid == userId && isValidId(data.uid)
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 100
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 160
+        && data.defaultValuationCpm is number && data.defaultValuationCpm >= 1 && data.defaultValuationCpm <= 200
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidHolder(data, userId) {
+      return data.keys().hasAll(['ownerId', 'name', 'relationship', 'cpfMasked', 'notes', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['ownerId', 'name', 'relationship', 'cpfMasked', 'notes', 'createdAt', 'updatedAt'])
+        && data.ownerId is string && data.ownerId == userId && isValidId(data.ownerId)
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 80
+        && data.relationship in ['Titular', 'Cônjuge', 'Familiar', 'Amigo']
+        && data.cpfMasked is string && data.cpfMasked.size() >= 4 && data.cpfMasked.size() <= 20 && data.cpfMasked.matches('^[0-9.*\\-]+$')
+        && data.notes is string && data.notes.size() <= 200
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAccount(data, userId) {
+      return data.keys().hasAll([
+          'ownerId', 'holderId', 'holderName', 'programId', 'programName',
+          'category', 'accountNumber', 'tier', 'balance', 'expiringPoints',
+          'expirationDate', 'avgCpm', 'cpfsUsed', 'cpfLimit', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'holderId', 'holderName', 'programId', 'programName',
+          'category', 'accountNumber', 'tier', 'balance', 'expiringPoints',
+          'expirationDate', 'avgCpm', 'cpfsUsed', 'cpfLimit', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerId is string && data.ownerId == userId && isValidId(data.ownerId)
+        && data.holderId is string && isValidId(data.holderId)
+        && data.holderName is string && data.holderName.size() >= 2 && data.holderName.size() <= 80
+        && data.programId is string && data.programId.size() >= 2 && data.programId.size() <= 40 && data.programId.matches('^[a-z0-9_\\-]+$')
+        && data.programName is string && data.programName.size() >= 2 && data.programName.size() <= 60
+        && data.category in ['aerea', 'banco', 'varejo']
+        && data.accountNumber is string && data.accountNumber.size() <= 40
+        && data.tier is string && data.tier.size() <= 40
+        && data.balance is number && data.balance >= 0 && data.balance <= 100000000
+        && data.expiringPoints is number && data.expiringPoints >= 0 && data.expiringPoints <= 100000000
+        && data.expirationDate is string && data.expirationDate.size() <= 20
+        && data.avgCpm is number && data.avgCpm >= 0 && data.avgCpm <= 500
+        && data.cpfsUsed is number && data.cpfsUsed >= 0 && data.cpfsUsed <= 50
+        && data.cpfLimit is number && data.cpfLimit >= 0 && data.cpfLimit <= 50
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidTransaction(data, userId) {
+      return data.keys().hasAll([
+          'ownerId', 'accountId', 'programName', 'holderName',
+          'type', 'points', 'description', 'date', 'cpm', 'totalBrl', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'accountId', 'programName', 'holderName',
+          'type', 'points', 'description', 'date', 'cpm', 'totalBrl', 'createdAt'
+        ])
+        && data.ownerId is string && data.ownerId == userId && isValidId(data.ownerId)
+        && data.accountId is string && isValidId(data.accountId)
+        && data.programName is string && data.programName.size() >= 2 && data.programName.size() <= 60
+        && data.holderName is string && data.holderName.size() >= 2 && data.holderName.size() <= 80
+        && data.type in ['acumulo', 'transferencia_entrada', 'transferencia_saida', 'resgate', 'venda', 'ajuste']
+        && data.points is number && data.points >= -100000000 && data.points <= 100000000 && data.points != 0
+        && data.description is string && data.description.size() >= 2 && data.description.size() <= 140
+        && data.date is string && data.date.size() >= 8 && data.date.size() <= 20
+        && data.cpm is number && data.cpm >= 0 && data.cpm <= 500
+        && data.totalBrl is number && data.totalBrl >= 0 && data.totalBrl <= 10000000
+        && data.createdAt is timestamp;
+    }
+
+    function isValidFlightAlert(data, userId) {
+      return data.keys().hasAll([
+          'ownerId', 'origin', 'destination', 'departureDate', 'returnDate',
+          'cabin', 'maxMiles', 'maxCashBrl', 'preferredProgram', 'status', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'origin', 'destination', 'departureDate', 'returnDate',
+          'cabin', 'maxMiles', 'maxCashBrl', 'preferredProgram', 'status', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerId is string && data.ownerId == userId && isValidId(data.ownerId)
+        && data.origin is string && data.origin.size() >= 3 && data.origin.size() <= 5
+        && data.destination is string && data.destination.size() >= 3 && data.destination.size() <= 5
+        && data.departureDate is string && data.departureDate.size() >= 8 && data.departureDate.size() <= 20
+        && data.returnDate is string && data.returnDate.size() <= 20
+        && data.cabin in ['economica', 'executiva']
+        && data.maxMiles is number && data.maxMiles >= 1000 && data.maxMiles <= 5000000
+        && data.maxCashBrl is number && data.maxCashBrl >= 50 && data.maxCashBrl <= 500000
+        && data.preferredProgram is string && data.preferredProgram.size() >= 2 && data.preferredProgram.size() <= 40
+        && data.status in ['ativo', 'atingido', 'pausado']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidSale(data, userId) {
+      return data.keys().hasAll([
+          'ownerId', 'accountId', 'programName', 'holderName', 'milesAmount',
+          'ratePerThousand', 'totalBrl', 'payoutSpeed', 'partnerName',
+          'status', 'payoutDate', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'accountId', 'programName', 'holderName', 'milesAmount',
+          'ratePerThousand', 'totalBrl', 'payoutSpeed', 'partnerName',
+          'status', 'payoutDate', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerId is string && data.ownerId == userId && isValidId(data.ownerId)
+        && data.accountId is string && isValidId(data.accountId)
+        && data.programName is string && data.programName.size() >= 2 && data.programName.size() <= 60
+        && data.holderName is string && data.holderName.size() >= 2 && data.holderName.size() <= 80
+        && data.milesAmount is number && data.milesAmount >= 1000 && data.milesAmount <= 10000000
+        && data.ratePerThousand is number && data.ratePerThousand >= 1 && data.ratePerThousand <= 500
+        && data.totalBrl is number && data.totalBrl >= 1 && data.totalBrl <= 10000000
+        && data.payoutSpeed in ['programado_30d', 'expresso_1d']
+        && data.partnerName is string && data.partnerName.size() >= 2 && data.partnerName.size() <= 60
+        && data.status in ['em_analise', 'aprovada', 'paga', 'cancelada']
+        && data.payoutDate is string && data.payoutDate.size() >= 8 && data.payoutDate.size() <= 20
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false;
+      allow create: if isVerifiedOwner(userId)
+        && isValidId(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedOwner(userId)
+        && isValidId(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'defaultValuationCpm', 'updatedAt']);
+      allow delete: if false;
+
+      match /holders/{holderId} {
+        allow get: if isOwner(userId) && isValidId(holderId);
+        allow list: if isOwner(userId) && resource.data.ownerId == request.auth.uid;
+        allow create: if isVerifiedOwner(userId)
+          && isValidId(holderId)
+          && isValidHolder(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isVerifiedOwner(userId)
+          && isValidId(holderId)
+          && isValidHolder(incoming(), userId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'relationship', 'cpfMasked', 'notes', 'updatedAt']);
+        allow delete: if isVerifiedOwner(userId) && isValidId(holderId);
+      }
+
+      match /accounts/{accountId} {
+        allow get: if isOwner(userId) && isValidId(accountId);
+        allow list: if isOwner(userId) && resource.data.ownerId == request.auth.uid;
+        allow create: if isVerifiedOwner(userId)
+          && isValidId(accountId)
+          && isValidAccount(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && existsAfter(/databases/$(database)/documents/users/$(userId)/holders/$(incoming().holderId));
+        allow update: if isVerifiedOwner(userId)
+          && isValidId(accountId)
+          && isValidAccount(incoming(), userId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly(['balance', 'expiringPoints', 'expirationDate', 'avgCpm', 'cpfsUsed', 'updatedAt'])
+            || incoming().diff(existing()).affectedKeys().hasOnly(['accountNumber', 'tier', 'cpfLimit', 'cpfsUsed', 'expiringPoints', 'expirationDate', 'avgCpm', 'balance', 'holderId', 'holderName', 'updatedAt'])
+          );
+        allow delete: if isVerifiedOwner(userId) && isValidId(accountId);
+      }
+
+      match /transactions/{transactionId} {
+        allow get: if isOwner(userId) && isValidId(transactionId);
+        allow list: if isOwner(userId) && resource.data.ownerId == request.auth.uid;
+        allow create: if isVerifiedOwner(userId)
+          && isValidId(transactionId)
+          && isValidTransaction(incoming(), userId)
+          && incoming().createdAt == request.time
+          && existsAfter(/databases/$(database)/documents/users/$(userId)/accounts/$(incoming().accountId));
+        allow update: if false;
+        allow delete: if isVerifiedOwner(userId) && isValidId(transactionId);
+      }
+
+      match /flightAlerts/{alertId} {
+        allow get: if isOwner(userId) && isValidId(alertId);
+        allow list: if isOwner(userId) && resource.data.ownerId == request.auth.uid;
+        allow create: if isVerifiedOwner(userId)
+          && isValidId(alertId)
+          && isValidFlightAlert(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isVerifiedOwner(userId)
+          && isValidId(alertId)
+          && isValidFlightAlert(incoming(), userId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'maxMiles', 'maxCashBrl', 'updatedAt']);
+        allow delete: if isVerifiedOwner(userId) && isValidId(alertId);
+      }
+
+      match /sales/{saleId} {
+        allow get: if isOwner(userId) && isValidId(saleId);
+        allow list: if isOwner(userId) && resource.data.ownerId == request.auth.uid;
+        allow create: if isVerifiedOwner(userId)
+          && isValidId(saleId)
+          && isValidSale(incoming(), userId)
+          && incoming().status in ['em_analise', 'aprovada']
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && existsAfter(/databases/$(database)/documents/users/$(userId)/accounts/$(incoming().accountId));
+        allow update: if isVerifiedOwner(userId)
+          && isValidId(saleId)
+          && isValidSale(incoming(), userId)
+          && !(existing().status in ['paga', 'cancelada'])
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']);
+        allow delete: if false;
+      }
+    }
+  }
+}

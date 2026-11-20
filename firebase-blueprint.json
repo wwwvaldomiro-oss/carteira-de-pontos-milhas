@@ -1,0 +1,431 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated user profile and valuation preferences.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "defaultValuationCpm": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "displayName", "email", "defaultValuationCpm", "createdAt", "updatedAt"]
+    },
+    "FamilyHolder": {
+      "title": "FamilyHolder",
+      "description": "Account holder profile (primary user, spouse, family member, or friend).",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "relationship": {
+          "type": "string",
+          "enum": ["Titular", "Cônjuge", "Familiar", "Amigo"]
+        },
+        "cpfMasked": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 20,
+          "pattern": "^[0-9.*\\-]+$"
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["ownerId", "name", "relationship", "cpfMasked", "notes", "createdAt", "updatedAt"]
+    },
+    "LoyaltyAccount": {
+      "title": "LoyaltyAccount",
+      "description": "Connected airline, bank, or retail loyalty program account.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "holderId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "holderName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "programId": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 40,
+          "pattern": "^[a-z0-9_\\-]+$"
+        },
+        "programName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "category": {
+          "type": "string",
+          "enum": ["aerea", "banco", "varejo"]
+        },
+        "accountNumber": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "tier": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "balance": {
+          "type": "number"
+        },
+        "expiringPoints": {
+          "type": "number"
+        },
+        "expirationDate": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "avgCpm": {
+          "type": "number"
+        },
+        "cpfsUsed": {
+          "type": "number"
+        },
+        "cpfLimit": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "holderId",
+        "holderName",
+        "programId",
+        "programName",
+        "category",
+        "accountNumber",
+        "tier",
+        "balance",
+        "expiringPoints",
+        "expirationDate",
+        "avgCpm",
+        "cpfsUsed",
+        "cpfLimit",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PointTransaction": {
+      "title": "PointTransaction",
+      "description": "Unified ledger entry for earned, transferred, redeemed, or sold points.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "accountId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "programName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "holderName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "type": {
+          "type": "string",
+          "enum": ["acumulo", "transferencia_entrada", "transferencia_saida", "resgate", "venda", "ajuste"]
+        },
+        "points": {
+          "type": "number"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 140
+        },
+        "date": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 20
+        },
+        "cpm": {
+          "type": "number"
+        },
+        "totalBrl": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "accountId",
+        "programName",
+        "holderName",
+        "type",
+        "points",
+        "description",
+        "date",
+        "cpm",
+        "totalBrl",
+        "createdAt"
+      ]
+    },
+    "FlightAlert": {
+      "title": "FlightAlert",
+      "description": "Monitored route alert comparing miles and cash prices.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "origin": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 5
+        },
+        "destination": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 5
+        },
+        "departureDate": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 20
+        },
+        "returnDate": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "cabin": {
+          "type": "string",
+          "enum": ["economica", "executiva"]
+        },
+        "maxMiles": {
+          "type": "number"
+        },
+        "maxCashBrl": {
+          "type": "number"
+        },
+        "preferredProgram": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 40
+        },
+        "status": {
+          "type": "string",
+          "enum": ["ativo", "atingido", "pausado"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "origin",
+        "destination",
+        "departureDate",
+        "returnDate",
+        "cabin",
+        "maxMiles",
+        "maxCashBrl",
+        "preferredProgram",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "SaleQuote": {
+      "title": "SaleQuote",
+      "description": "Miles monetization order and payout schedule.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "accountId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "programName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "holderName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "milesAmount": {
+          "type": "number"
+        },
+        "ratePerThousand": {
+          "type": "number"
+        },
+        "totalBrl": {
+          "type": "number"
+        },
+        "payoutSpeed": {
+          "type": "string",
+          "enum": ["programado_30d", "expresso_1d"]
+        },
+        "partnerName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "status": {
+          "type": "string",
+          "enum": ["em_analise", "aprovada", "paga", "cancelada"]
+        },
+        "payoutDate": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 20
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "accountId",
+        "programName",
+        "holderName",
+        "milesAmount",
+        "ratePerThousand",
+        "totalBrl",
+        "payoutSpeed",
+        "partnerName",
+        "status",
+        "payoutDate",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "Authenticated user root profile and valuation preferences."
+    },
+    "/users/{userId}/holders/{holderId}": {
+      "schema": {
+        "$ref": "#/entities/FamilyHolder"
+      },
+      "description": "Primary and family/friend loyalty holders managed by the user."
+    },
+    "/users/{userId}/accounts/{accountId}": {
+      "schema": {
+        "$ref": "#/entities/LoyaltyAccount"
+      },
+      "description": "Connected loyalty program accounts belonging to the user."
+    },
+    "/users/{userId}/transactions/{transactionId}": {
+      "schema": {
+        "$ref": "#/entities/PointTransaction"
+      },
+      "description": "Unified loyalty points transaction ledger."
+    },
+    "/users/{userId}/flightAlerts/{alertId}": {
+      "schema": {
+        "$ref": "#/entities/FlightAlert"
+      },
+      "description": "User-configured flight fare alerts (miles vs cash)."
+    },
+    "/users/{userId}/sales/{saleId}": {
+      "schema": {
+        "$ref": "#/entities/SaleQuote"
+      },
+      "description": "Miles monetization sales orders and payout tracking."
+    }
+  }
+}
